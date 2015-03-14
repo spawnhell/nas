@@ -23,7 +23,7 @@ class GoogleMaps {
     private $zoom = 10;
     private $lat = -300;
     private $lon = 300;
-    
+    private $trackName = null;
     
     /**
      *
@@ -38,6 +38,7 @@ class GoogleMaps {
     private $polylinesCompleteListener = false;
 
     private $map = null;
+    private $lines = array();
     private $url = 'https://maps.googleapis.com/maps/api/js?v=3.exp&signed_in=true&libraries=drawing';
     
     /**
@@ -47,7 +48,8 @@ class GoogleMaps {
      * 
      * 
      */
-    public function __construct($api_key) {
+    public function __construct($api_key)
+    {
         $this->api_key = $api_key;
     }
 
@@ -63,7 +65,8 @@ class GoogleMaps {
      * @return	void
      */
     
-    function initialize($config = array()) {
+    function initialize($config = array())
+    {
         foreach ($config as $key => $val) {
             if (isset($this->$key)) {
                 $this->$key = $val;
@@ -80,36 +83,63 @@ class GoogleMaps {
      * @return	string
      */
     
-    public function setApiUrl( $apiUrl ){
+    public function setApiUrl( $apiUrl )
+    {
         
         $this->url = $apiUrl;
         
     }
     
-    public function enableDrawingManager(){
+    /**
+     * 
+     * Funkcja włącza DrawingManagera
+     * 
+     */
+    public function enableDrawingManager()
+    {
         
         $this->drawingManager = true;
         
     }
     
-    public function enablePolylinesCompleteListener(){
+    /**
+     * Funkcja włącza listener dla polilinii w celu
+     * nasłuchwiania kliknięć na mapie w trakcie wprowadzania.
+     */
+    public function enablePolylinesCompleteListener()
+    {
         
         $this->polylinesCompleteListener = true;
         
     }
     
     /**
-     * 
      * Funkcja zwraca kod HTML dla google maps
      * 
      * @return html
      */
-    public function getMap (){
+    public function getMap ()
+    {
         
         return $this->map;
         
     }
+    
+    public function addTrackName( \Fiber\Model\NetworkCableTrack $row )
+    {
+        $this->trackName[$row->id] = $row->name;
+    }
+    
+    public function addTrackCoordinates( \Zend\Db\ResultSet\ResultSet $lines )
+    {
+        foreach( $lines as $line )
+        {
+            $this->lines[$line->network_cable_track_id][] = array( $line->latitude, $line->longitude );   
+        }
         
+    }
+
+
     /**
      * Funkcja generuje kod HTML
      * 
@@ -127,7 +157,43 @@ class GoogleMaps {
         $map .= 'center: new google.maps.LatLng('.$this->lat.','.$this->lon.')';
         $map .= '};';
         $map .= 'var map = new google.maps.Map(document.getElementById(\''.$this->div_id.'\'),mapOptions);';
-        if( $this->drawingManager ){
+        
+        
+        if( $this->lines )
+        {
+            
+            foreach ( $this->lines as $index => $coordinates){
+                $map .= '';
+                $map .= 'var '.$this->trackName[$index].'Coordinates = [';
+                $map .= '';
+                $map .= '';
+                
+                foreach( $coordinates as $path )
+                {
+                            $map .= 'new google.maps.LatLng('.$path[0].','.$path[1].'),';
+                }
+                
+                $map .= '];';
+                $map .= '';
+                
+                $map .= 'var '.$this->trackName[$index].'Path = new google.maps.Polyline({';
+                $map .= 'path : '.$this->trackName[$index].'Coordinates,';
+                $map .= 'geodesic: true,';
+                $map .= 'strokeColor: \'#FF0000\',';
+                $map .= 'strokeOpacity: 1.0,';
+                $map .= 'strokeWeight: 2,';
+                $map .= '});';
+                $map .= '';
+                $map .= $this->trackName[$index].'Path.setMap(map);';
+                $map .= '';
+                $map .= '';
+                $map .= '';
+            }
+            
+        }
+        
+        if( $this->drawingManager )
+        {
         
             $map .= 'var drawingManager = new google.maps.drawing.DrawingManager({';
             $map .= 'drawingMode: google.maps.drawing.OverlayType.MARKER,';
@@ -159,6 +225,7 @@ class GoogleMaps {
         }
         
         $map .= '';
+        
         if( $this->polylinesCompleteListener) {
             
             $map .= 'google.maps.event.addListener(drawingManager, \'polylinecomplete\', function(line) {'
