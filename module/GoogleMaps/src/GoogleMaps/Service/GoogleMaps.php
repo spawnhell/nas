@@ -164,7 +164,7 @@ class GoogleMaps {
             
             foreach ( $this->lines as $index => $coordinates){
                 $map .= '';
-                $map .= 'var '.$this->trackName[$index].'Coordinates = [';
+                $map .= 'var '.preg_replace('/\s+/', '',$this->trackName[$index]).'Coordinates = [';
                 $map .= '';
                 $map .= '';
                 
@@ -176,15 +176,15 @@ class GoogleMaps {
                 $map .= '];';
                 $map .= '';
                 
-                $map .= 'var '.$this->trackName[$index].'Path = new google.maps.Polyline({';
-                $map .= 'path : '.$this->trackName[$index].'Coordinates,';
+                $map .= 'var '.preg_replace('/\s+/', '',$this->trackName[$index]).'Path = new google.maps.Polyline({';
+                $map .= 'path : '.preg_replace('/\s+/', '',$this->trackName[$index]).'Coordinates,';
                 $map .= 'geodesic: true,';
                 $map .= 'strokeColor: \'#FF0000\',';
                 $map .= 'strokeOpacity: 1.0,';
                 $map .= 'strokeWeight: 2,';
                 $map .= '});';
                 $map .= '';
-                $map .= $this->trackName[$index].'Path.setMap(map);';
+                $map .= preg_replace('/\s+/', '',$this->trackName[$index]).'Path.setMap(map);';
                 $map .= '';
                 $map .= '';
                 $map .= '';
